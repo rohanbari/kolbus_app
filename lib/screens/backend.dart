@@ -53,23 +53,3 @@ List<RouteModel> searchRoutes(String source, String via, String destination) {
 
   return matched;
 }
-
-Widget buildAutoField(String label, TextEditingController controller) {
-  return Autocomplete<String>(
-    optionsBuilder: (textEditingValue) {
-      return getSuggestions(textEditingValue.text);
-    },
-    onSelected: (selection) {
-      controller.text = selection;
-    },
-    fieldViewBuilder: (context, fieldController, focusNode, _) {
-      controller.value = fieldController.value;
-
-      return TextField(
-        controller: fieldController,
-        focusNode: focusNode,
-        decoration: InputDecoration(labelText: label),
-      );
-    },
-  );
-}
