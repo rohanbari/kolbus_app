@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:kolbus_app/screens/home_page.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 
 void main() {
-  runApp(const KolBusApp());
+  runApp(ResponsiveSizer(builder: (p0, p1, p2) => const KolBusApp()));
 }
 
 class KolBusApp extends StatelessWidget {
