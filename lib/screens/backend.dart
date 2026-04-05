@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:kolbus_app/models/route_model.dart';
 import 'package:kolbus_app/vars.dart';
 
@@ -20,10 +19,16 @@ List<String> getSuggestions(String query) {
 
   final lower = query.toLowerCase();
 
-  return allStops
+  final results = allStops
       .where((s) => s.toLowerCase().contains(lower))
       .take(10)
       .toList();
+
+  final completeQuery = results
+      .where((element) => element == query)
+      .firstOrNull;
+
+  return completeQuery != null ? [] : results;
 }
 
 List<RouteModel> searchRoutes(String source, String via, String destination) {

@@ -5,12 +5,16 @@ class AutoFieldWidget extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final FocusNode focusNode;
+  final bool enabled;
+  final Widget? suffix;
 
   const AutoFieldWidget({
     super.key,
     required this.label,
     required this.controller,
     required this.focusNode,
+    required this.enabled,
+    this.suffix
   });
 
   @override
@@ -28,9 +32,14 @@ class AutoFieldWidget extends StatelessWidget {
         controller.value = fieldController.value;
 
         return TextField(
+          enabled: enabled,
           controller: fieldController,
           focusNode: focusNode,
-          decoration: InputDecoration(labelText: label, border: OutlineInputBorder()),
+          decoration: InputDecoration(
+            labelText: label,
+            border: OutlineInputBorder(),
+            suffixIcon: suffix,
+          ),
         );
       },
     );
