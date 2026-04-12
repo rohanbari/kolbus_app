@@ -1,4 +1,4 @@
-package com.centosys.kolbus_app
+package com.centosys.kolbus
 
 import io.flutter.embedding.android.FlutterActivity
 

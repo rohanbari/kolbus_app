@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.centosys.kolbus_app"
+    namespace = "com.centosys.kolbus"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

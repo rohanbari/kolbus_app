@@ -111,9 +111,11 @@ class _HomePageState extends State<HomePage> {
                   context.push('/about');
                   break;
                 case 'Rate Us':
-                  final url = Uri.parse('https://play.google.com/store/apps/details?id=com.centosys.notebook');
+                  final url = Uri.parse(
+                    'https://play.google.com/store/apps/details?id=com.centosys.kolbus',
+                  );
 
-                  if(await canLaunchUrl(url)){
+                  if (await canLaunchUrl(url)) {
                     launchUrl(url);
                   } else {
                     debugPrint('Failed to launch URL');
