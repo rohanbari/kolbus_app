@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kolbus_app/models/route_model.dart';
+import 'package:kolbus_app/screens/about_page.dart';
 import 'package:kolbus_app/screens/backend.dart';
 import 'package:kolbus_app/screens/route_card.dart';
 import 'package:kolbus_app/screens/route_details.dart';
@@ -98,6 +100,39 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('KolBus'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          PopupMenuButton<String>(
+            position: PopupMenuPosition.under,
+            borderRadius: .circular(50.0),
+            elevation: 10.0,
+            onSelected: (value) {
+              switch (value) {
+                case 'About':
+                  context.push('/about');
+                  print('About tapped');
+                  break;
+                case 'Rate Us':
+                  print('Rate Us tapped');
+                  break;
+              }
+            },
+            itemBuilder: (context) =>
+                [('About', Icons.info_outline), ('Rate Us', Icons.star_outline)]
+                    .map(
+                      (e) => PopupMenuItem(
+                        value: e.$1,
+                        child: Row(
+                          children: [
+                            Icon(e.$2),
+                            SizedBox(width: 10),
+                            Text(e.$1),
+                          ],
+                        ),
+                      ),
+                    )
+                    .toList(),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -202,11 +237,13 @@ class _HomePageState extends State<HomePage> {
                           child: OpenContainer(
                             clipBehavior: Clip.hardEdge,
                             transitionType: ContainerTransitionType.fadeThrough,
-                            transitionDuration: const Duration(milliseconds: 500),
+                            transitionDuration: const Duration(
+                              milliseconds: 500,
+                            ),
                             closedColor: Theme.of(context).cardColor,
                             // closedElevation: 20,
                             closedShape: RoundedRectangleBorder(
-                              borderRadius: BorderRadiusGeometry.circular(16.0)
+                              borderRadius: BorderRadiusGeometry.circular(16.0),
                             ),
 
                             closedBuilder: (context, action) => RouteCard(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kolbus_app/screens/home_page.dart';
+import 'package:kolbus_app/routes/app_routes.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
 void main() {
@@ -11,7 +11,7 @@ class KolBusApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'KolBus',
       theme: ThemeData(
         colorScheme: .fromSeed(seedColor: Colors.deepOrange),
@@ -22,7 +22,7 @@ class KolBusApp extends StatelessWidget {
         useMaterial3: true,
       ),
       themeMode: ThemeMode.light,
-      home: const HomePage(),
+      routerConfig: router,
     );
   }
 }
