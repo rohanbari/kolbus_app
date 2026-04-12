@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kolbus_app/models/route_model.dart';
-import 'package:kolbus_app/screens/about_page.dart';
 import 'package:kolbus_app/screens/backend.dart';
 import 'package:kolbus_app/screens/route_card.dart';
 import 'package:kolbus_app/screens/route_details.dart';
 import 'package:kolbus_app/vars.dart';
 import 'package:kolbus_app/widgets/auto_field_widget.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -105,14 +105,19 @@ class _HomePageState extends State<HomePage> {
             position: PopupMenuPosition.under,
             borderRadius: .circular(50.0),
             elevation: 10.0,
-            onSelected: (value) {
+            onSelected: (value) async {
               switch (value) {
                 case 'About':
                   context.push('/about');
-                  print('About tapped');
                   break;
                 case 'Rate Us':
-                  print('Rate Us tapped');
+                  final url = Uri.parse('https://play.google.com/store/apps/details?id=com.centosys.notebook');
+
+                  if(await canLaunchUrl(url)){
+                    launchUrl(url);
+                  } else {
+                    debugPrint('Failed to launch URL');
+                  }
                   break;
               }
             },
@@ -145,6 +150,14 @@ class _HomePageState extends State<HomePage> {
                   controller: sourceController,
                   focusNode: sourceFocusNode,
                   enabled: true,
+                  suffix: sourceController.text.trim().isNotEmpty
+                      ? IconButton(
+                          onPressed: () {
+                            sourceController.clear();
+                          },
+                          icon: Icon(Icons.close_rounded),
+                        )
+                      : null,
                 ),
                 SizedBox(height: 1.5.h),
                 AutoFieldWidget(

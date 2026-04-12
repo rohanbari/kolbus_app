@@ -1,25 +1,16 @@
-class RouteModel {
-  final String routeId;
-  final String source;
-  final String destination;
-  final List<String> stops;
-  final String timing;
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  RouteModel({
-    required this.routeId,
-    required this.source,
-    required this.destination,
-    required this.stops,
-    required this.timing,
-  });
+part 'route_model.freezed.dart';
+part 'route_model.g.dart';
 
-  factory RouteModel.fromJson(Map<String, dynamic> json) {
-    return RouteModel(
-      routeId: json['route_id'] ?? '',
-      source: json['source'] ?? '',
-      destination: json['destination'] ?? '',
-      stops: List<String>.from(json['stops'] ?? []),
-      timing: json['timing'] ?? '',
-    );
-  }
+@freezed
+sealed class RouteModel with _$RouteModel {
+  factory RouteModel({
+    @JsonKey(name: 'route_id') required String routeId,
+    required String source,
+    required String destination,
+    required List<String> stops,
+  }) = _RouteModel;
+
+  factory RouteModel.fromJson(Map<String, dynamic> json) => _$RouteModelFromJson(json);
 }
