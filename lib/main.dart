@@ -17,6 +17,11 @@ class KolBusApp extends StatelessWidget {
         colorScheme: .fromSeed(seedColor: Colors.deepOrange),
         useMaterial3: true,
       ),
+      darkTheme: ThemeData(
+        colorScheme: .fromSeed(seedColor: Colors.deepOrange, brightness: .dark),
+        useMaterial3: true,
+      ),
+      themeMode: ThemeMode.light,
       home: const HomePage(),
     );
   }

@@ -1,10 +1,12 @@
 import 'dart:convert';
 
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kolbus_app/models/route_model.dart';
 import 'package:kolbus_app/screens/backend.dart';
 import 'package:kolbus_app/screens/route_card.dart';
+import 'package:kolbus_app/screens/route_details.dart';
 import 'package:kolbus_app/vars.dart';
 import 'package:kolbus_app/widgets/auto_field_widget.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
@@ -65,6 +67,10 @@ class _HomePageState extends State<HomePage> {
     );
 
     firstRun = false;
+
+    sourceFocusNode.unfocus();
+    viaFocusNode.unfocus();
+    destFocusNode.unfocus();
 
     setState(() {
       results = res;
@@ -190,7 +196,33 @@ class _HomePageState extends State<HomePage> {
                       itemCount: results.length,
                       itemBuilder: (context, index) {
                         final route = results[index];
-                        return RouteCard(route: route);
+
+                        return Container(
+                          margin: .symmetric(horizontal: 1.w, vertical: 5),
+                          child: OpenContainer(
+                            clipBehavior: Clip.hardEdge,
+                            transitionType: ContainerTransitionType.fadeThrough,
+                            transitionDuration: const Duration(milliseconds: 500),
+                            closedColor: Theme.of(context).cardColor,
+                            // closedElevation: 20,
+                            closedShape: RoundedRectangleBorder(
+                              borderRadius: BorderRadiusGeometry.circular(16.0)
+                            ),
+
+                            closedBuilder: (context, action) => RouteCard(
+                              route: route,
+                              source: sourceController.text,
+                              destination: destController.text,
+                              action: action,
+                            ),
+
+                            openBuilder: (context, action) => RouteDetailsPage(
+                              route: route,
+                              source: sourceController.text,
+                              destination: destController.text,
+                            ),
+                          ),
+                        );
                       },
                     ),
             ),
@@ -205,6 +237,7 @@ class _HomePageState extends State<HomePage> {
                 destController.clear();
 
                 setState(() {
+                  viaEnabled = false;
                   results.clear();
                   sourceFocusNode.unfocus();
                   destFocusNode.unfocus();
