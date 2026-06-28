@@ -1,26 +1,24 @@
-import 'dart:convert';
-
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kolbus_app/models/route_model.dart';
+import 'package:kolbus_app/providers/data_provider.dart';
 import 'package:kolbus_app/screens/backend.dart';
 import 'package:kolbus_app/screens/route_card.dart';
 import 'package:kolbus_app/screens/route_details.dart';
-import 'package:kolbus_app/vars.dart';
 import 'package:kolbus_app/widgets/auto_field_widget.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   final sourceController = TextEditingController();
   final viaController = TextEditingController();
   final destController = TextEditingController();
@@ -30,39 +28,24 @@ class _HomePageState extends State<HomePage> {
   final destFocusNode = FocusNode();
 
   var viaEnabled = false;
+  bool firstRun = true;
 
   @override
   void initState() {
     super.initState();
-    initData();
 
-    sourceController.addListener(() {
+    sourceController.addListener(() async {
       if (sourceController.text.trim().length >= 3) {
         setState(() {
-          viaEnabled = allStops.contains(sourceController.text.toString());
+          viaEnabled = await ref.read(dataProvider.future).allStops.contains(sourceController.text.toString());
         });
       }
     });
   }
 
-  Future<void> initData() async {
-    final jsonString = await rootBundle.loadString('assets/routes.json');
-    final jsonData = json.decode(jsonString);
-
-    final loadedRoutes = (jsonData['routes'] as List)
-        .map((e) => RouteModel.fromJson(e))
-        .toList();
-
-    setState(() {
-      routes = loadedRoutes;
-      aliases = Map<String, String>.from(jsonData['aliases']);
-
-      allStops = {...routes.expand((r) => r.stops), ...aliases.keys};
-    });
-  }
-
   void handleSearch() {
-    final res = searchRoutes(
+    final backendService = ref.read(backendServiceProvider);
+    final res = backendService.searchRoutes(
       sourceController.text,
       viaController.text,
       destController.text,
@@ -74,9 +57,7 @@ class _HomePageState extends State<HomePage> {
     viaFocusNode.unfocus();
     destFocusNode.unfocus();
 
-    setState(() {
-      results = res;
-    });
+    ref.read(appDataProvider.notifier).setResults(res);
   }
 
   @override
@@ -92,10 +73,10 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  bool firstRun = true;
-
   @override
   Widget build(BuildContext context) {
+    final results = ref.watch(appDataProvider).results;
+    final allStops = ref.watch(appDataProvider).allStops;
     return Scaffold(
       appBar: AppBar(
         title: const Text('KolBus'),
@@ -290,7 +271,7 @@ class _HomePageState extends State<HomePage> {
 
                 setState(() {
                   viaEnabled = false;
-                  results.clear();
+                  ref.read(appDataProvider.notifier).setResults([]);
                   sourceFocusNode.unfocus();
                   destFocusNode.unfocus();
                   viaFocusNode.unfocus();
