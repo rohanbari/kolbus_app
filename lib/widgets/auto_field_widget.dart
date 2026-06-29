@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:kolbus_app/screens/backend.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kolbus_app/providers/backend_service_provider.dart';
 
-class AutoFieldWidget extends StatelessWidget {
+class AutoFieldWidget extends ConsumerWidget {
   final String label;
   final TextEditingController controller;
   final FocusNode focusNode;
@@ -14,16 +15,18 @@ class AutoFieldWidget extends StatelessWidget {
     required this.controller,
     required this.focusNode,
     required this.enabled,
-    this.suffix
+    this.suffix,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Autocomplete<String>(
       focusNode: focusNode,
       textEditingController: controller,
-      optionsBuilder: (textEditingValue) {
-        return getSuggestions(textEditingValue.text);
+      optionsBuilder: (textEditingValue) async {
+        return await ref.refresh(
+          suggestionsProvider(textEditingValue.text).future,
+        );
       },
       onSelected: (selection) {
         controller.text = selection;

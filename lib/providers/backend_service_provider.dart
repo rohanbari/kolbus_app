@@ -47,7 +47,7 @@ class Suggestions extends _$Suggestions {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class SearchRoutes extends _$SearchRoutes {
   @override
   FutureOr<List<RouteModel>> build({
@@ -57,13 +57,11 @@ class SearchRoutes extends _$SearchRoutes {
   }) async {
     if (source == null || destination == null) return [];
 
-    final _source = await ref.refresh(normalizeStopProvider(source).future);
-    final _via = await ref.refresh(normalizeStopProvider(via).future);
-    final _destination = await ref.refresh(
+    final _source = await ref.read(normalizeStopProvider(source).future);
+    final _via = await ref.read(normalizeStopProvider(via).future);
+    final _destination = await ref.read(
       normalizeStopProvider(destination).future,
     );
-
-    ref.invalidate(normalizeStopProvider);
 
     final routes = await ref
         .read(dataProvider.future)

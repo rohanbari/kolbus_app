@@ -55,4 +55,12 @@ class Data extends _$Data {
       state = AsyncData(currentValue.copyWith(allStops: allStops));
     }
   }
+
+  Future<bool> viaEnabled(String source) async {
+    if (source.trim().length >= 3) {
+      return state.value?.allStops.contains(source) ?? false;
+    } else {
+      return false;
+    }
+  }
 }
