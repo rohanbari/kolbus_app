@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kolbus_app/providers/data_provider.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 
 class SplashScreen extends ConsumerWidget {
   const SplashScreen({super.key});
@@ -22,7 +23,17 @@ class SplashScreen extends ConsumerWidget {
             Center(child: Text('Failed to load database due to : ${error}'));
           },
           loading: () {
-            return Center(child: CircularProgressIndicator());
+            return Center(child: Container(
+              height: 20.h,
+              child: Column(
+                mainAxisAlignment: .center,
+                crossAxisAlignment: .center,
+                children: [
+                  Icon(Icons.commute),
+                  CircularProgressIndicator(),
+                ],
+              ),
+            ));
           },
         ),
       ),

@@ -53,14 +53,14 @@ class AboutPage extends StatelessWidget {
             content:
                 'To be a leading provider of mobile applications that anticipate and meet the evolving needs of our users, fostering a more connected and efficient world.',
           ),
-          const SizedBox(height: 20),
-          const _InfoCard(
-            icon: Icons.contact_mail,
-            title: 'Contact Us',
-            content: 'Email: contact@centosys.com\n'
-                'Phone: +1 (234) 567-890\n'
-                'Website: www.centosys.com',
-          ),
+          // const SizedBox(height: 20),
+          // const _InfoCard(
+          //   icon: Icons.contact_mail,
+          //   title: 'Contact Us',
+          //   content: 'Email: contact@centosys.com\n'
+          //       'Phone: +1 (234) 567-890\n'
+          //       'Website: www.centosys.com',
+          // ),
         ],
       ),
     );

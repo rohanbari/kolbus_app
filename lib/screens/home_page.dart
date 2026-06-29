@@ -2,6 +2,7 @@ import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:kolbus_app/providers/backend_service_provider.dart';
 import 'package:kolbus_app/providers/data_provider.dart';
 // import 'package:kolbus_app/screens/backend.dart';
@@ -28,6 +29,29 @@ class _HomePageState extends ConsumerState<HomePage> {
   final destFocusNode = FocusNode();
 
   bool firstRun = true;
+  BannerAd? _bannerAd;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBannerAd();
+  }
+
+  void _loadBannerAd() {
+    _bannerAd = BannerAd(
+      adUnitId: 'ca-app-pub-3940256099942544/6300978111', // Sample Ad ID
+      request: const AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          setState(() {});
+        },
+        onAdFailedToLoad: (ad, err) {
+          ad.dispose();
+        },
+      ),
+    )..load();
+  }
 
   void handleSearch() async {
     var searchRoutes = await ref.read(
@@ -56,7 +80,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     sourceFocusNode.dispose();
     viaFocusNode.dispose();
     destFocusNode.dispose();
-
+    _bannerAd?.dispose();
     super.dispose();
   }
 
@@ -262,6 +286,13 @@ class _HomePageState extends ConsumerState<HomePage> {
               ],
             ),
           ),
+          bottomNavigationBar: _bannerAd != null
+              ? SizedBox(
+                  width: _bannerAd!.size.width.toDouble(),
+                  height: _bannerAd!.size.height.toDouble(),
+                  child: AdWidget(ad: _bannerAd!),
+                )
+              : null,
           floatingActionButton: data.results.isNotEmpty
               ? FloatingActionButton(
                   onPressed: () {
