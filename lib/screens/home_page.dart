@@ -1,26 +1,25 @@
-import 'dart:convert';
-
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kolbus_app/models/route_model.dart';
-import 'package:kolbus_app/screens/backend.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:kolbus_app/providers/backend_service_provider.dart';
+import 'package:kolbus_app/providers/data_provider.dart';
+// import 'package:kolbus_app/screens/backend.dart';
 import 'package:kolbus_app/screens/route_card.dart';
 import 'package:kolbus_app/screens/route_details.dart';
-import 'package:kolbus_app/vars.dart';
 import 'package:kolbus_app/widgets/auto_field_widget.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   final sourceController = TextEditingController();
   final viaController = TextEditingController();
   final destController = TextEditingController();
@@ -29,43 +28,38 @@ class _HomePageState extends State<HomePage> {
   final viaFocusNode = FocusNode();
   final destFocusNode = FocusNode();
 
-  var viaEnabled = false;
+  bool firstRun = true;
+  BannerAd? _bannerAd;
 
   @override
   void initState() {
     super.initState();
-    initData();
-
-    sourceController.addListener(() {
-      if (sourceController.text.trim().length >= 3) {
-        setState(() {
-          viaEnabled = allStops.contains(sourceController.text.toString());
-        });
-      }
-    });
+    _loadBannerAd();
   }
 
-  Future<void> initData() async {
-    final jsonString = await rootBundle.loadString('assets/routes.json');
-    final jsonData = json.decode(jsonString);
-
-    final loadedRoutes = (jsonData['routes'] as List)
-        .map((e) => RouteModel.fromJson(e))
-        .toList();
-
-    setState(() {
-      routes = loadedRoutes;
-      aliases = Map<String, String>.from(jsonData['aliases']);
-
-      allStops = {...routes.expand((r) => r.stops), ...aliases.keys};
-    });
+  void _loadBannerAd() {
+    _bannerAd = BannerAd(
+      adUnitId: 'ca-app-pub-3940256099942544/6300978111', // Sample Ad ID
+      request: const AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          setState(() {});
+        },
+        onAdFailedToLoad: (ad, err) {
+          ad.dispose();
+        },
+      ),
+    )..load();
   }
 
-  void handleSearch() {
-    final res = searchRoutes(
-      sourceController.text,
-      viaController.text,
-      destController.text,
+  void handleSearch() async {
+    var searchRoutes = await ref.read(
+      searchRoutesProvider(
+        source: sourceController.text,
+        via: viaController.text,
+        destination: destController.text,
+      ).future,
     );
 
     firstRun = false;
@@ -74,9 +68,7 @@ class _HomePageState extends State<HomePage> {
     viaFocusNode.unfocus();
     destFocusNode.unfocus();
 
-    setState(() {
-      results = res;
-    });
+    ref.read(dataProvider.notifier).setResults(searchRoutes);
   }
 
   @override
@@ -88,217 +80,243 @@ class _HomePageState extends State<HomePage> {
     sourceFocusNode.dispose();
     viaFocusNode.dispose();
     destFocusNode.dispose();
-
+    _bannerAd?.dispose();
     super.dispose();
   }
 
-  bool firstRun = true;
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('KolBus'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          PopupMenuButton<String>(
-            position: PopupMenuPosition.under,
-            borderRadius: .circular(50.0),
-            elevation: 10.0,
-            onSelected: (value) async {
-              switch (value) {
-                case 'About':
-                  context.push('/about');
-                  break;
-                case 'Rate Us':
-                  final url = Uri.parse(
-                    'https://play.google.com/store/apps/details?id=com.centosys.kolbus',
-                  );
+    final dp = ref.watch(dataProvider);
+    final dn = ref.watch(dataProvider.notifier);
 
-                  if (await canLaunchUrl(url)) {
-                    launchUrl(url);
-                  } else {
-                    debugPrint('Failed to launch URL');
+    return dp.when(
+      data: (data) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('KolBus'),
+            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+            actions: [
+              PopupMenuButton<String>(
+                position: PopupMenuPosition.under,
+                borderRadius: .circular(50.0),
+                elevation: 10.0,
+                onSelected: (value) async {
+                  switch (value) {
+                    case 'About':
+                      context.push('/about');
+                      break;
+                    case 'Rate Us':
+                      final url = Uri.parse(
+                        'https://play.google.com/store/apps/details?id=com.centosys.kolbus',
+                      );
+
+                      if (await canLaunchUrl(url)) {
+                        launchUrl(url);
+                      } else {
+                        debugPrint('Failed to launch URL');
+                      }
+                      break;
                   }
-                  break;
-              }
-            },
-            itemBuilder: (context) =>
-                [('About', Icons.info_outline), ('Rate Us', Icons.star_outline)]
-                    .map(
-                      (e) => PopupMenuItem(
-                        value: e.$1,
-                        child: Row(
-                          children: [
-                            Icon(e.$2),
-                            SizedBox(width: 10),
-                            Text(e.$1),
-                          ],
-                        ),
-                      ),
-                    )
-                    .toList(),
+                },
+                itemBuilder: (context) =>
+                    [
+                          ('About', Icons.info_outline),
+                          ('Rate Us', Icons.star_outline),
+                        ]
+                        .map(
+                          (e) => PopupMenuItem(
+                            value: e.$1,
+                            child: Row(
+                              children: [
+                                Icon(e.$2),
+                                SizedBox(width: 10),
+                                Text(e.$1),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+              ),
+            ],
           ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Column(
+          body: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
-                AutoFieldWidget(
-                  label: "Source",
-                  controller: sourceController,
-                  focusNode: sourceFocusNode,
-                  enabled: true,
-                  suffix: sourceController.text.trim().isNotEmpty
-                      ? IconButton(
-                          onPressed: () {
-                            sourceController.clear();
-                          },
-                          icon: Icon(Icons.close_rounded),
-                        )
-                      : null,
-                ),
-                SizedBox(height: 1.5.h),
-                AutoFieldWidget(
-                  label: "Via (optional)",
-                  controller: viaController,
-                  focusNode: viaFocusNode,
-                  enabled: viaEnabled,
-                ),
-                SizedBox(height: 1.5.h),
-                AutoFieldWidget(
-                  label: "Destination",
-                  controller: destController,
-                  focusNode: destFocusNode,
-                  enabled: true,
-                  suffix:
-                      (destController.text.trim().length >= 3 &&
-                          allStops.contains(
-                            destController.text.trim().toString(),
-                          ) &&
-                          destController.text.trim().toString() !=
-                              sourceController.text.trim().toString())
-                      ? IconButton(
-                          onPressed: () {
-                            final source = sourceController.text.toString();
-                            final destination = destController.text.toString();
-
-                            if (source.trim().isNotEmpty &&
-                                destination.trim().isNotEmpty) {
-                              setState(() {
-                                sourceController.text = destination;
-                                sourceController.value = TextEditingValue(
-                                  text: destination,
-                                );
-                                destController.text = source;
-                                destController.value = TextEditingValue(
-                                  text: source,
-                                );
-                              });
-                            }
-                          },
-                          icon: Icon(Icons.swap_vert),
-                        )
-                      : null,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: 100.w,
-              height: 6.h,
-              child: ElevatedButton(
-                onPressed: handleSearch,
-                child: Row(
-                  mainAxisAlignment: .center,
-                  crossAxisAlignment: .center,
+                Column(
                   children: [
-                    Icon(
-                      Icons.search,
-                      size: 20.sp,
-                      fontWeight: FontWeight.w700,
+                    AutoFieldWidget(
+                      label: "Source",
+                      controller: sourceController,
+                      focusNode: sourceFocusNode,
+                      enabled: true,
+                      suffix: sourceController.text.trim().isNotEmpty
+                          ? IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  sourceController.clear();
+                                });
+                              },
+                              icon: Icon(Icons.close_rounded),
+                            )
+                          : null,
                     ),
-                    SizedBox(width: 2.w),
-                    Text(
-                      'SEARCH',
-                      style: TextStyle(fontSize: 18.sp, fontWeight: .w700),
+                    SizedBox(height: 1.5.h),
+                    AutoFieldWidget(
+                      label: "Via (optional)",
+                      controller: viaController,
+                      focusNode: viaFocusNode,
+                      enabled: true,
+                    ),
+                    SizedBox(height: 1.5.h),
+                    AutoFieldWidget(
+                      label: "Destination",
+                      controller: destController,
+                      focusNode: destFocusNode,
+                      enabled: true,
+                      suffix:
+                          (destController.text.trim().length >= 3 &&
+                              data.allStops.contains(
+                                destController.text.trim().toString(),
+                              ) &&
+                              destController.text.trim().toString() !=
+                                  sourceController.text.trim().toString())
+                          ? IconButton(
+                              onPressed: () {
+                                final source = sourceController.text.toString();
+                                final destination = destController.text
+                                    .toString();
+
+                                if (source.trim().isNotEmpty &&
+                                    destination.trim().isNotEmpty) {
+                                  setState(() {
+                                    sourceController.text = destination;
+                                    sourceController.value = TextEditingValue(
+                                      text: destination,
+                                    );
+                                    destController.text = source;
+                                    destController.value = TextEditingValue(
+                                      text: source,
+                                    );
+                                  });
+                                }
+                              },
+                              icon: Icon(Icons.swap_vert),
+                            )
+                          : null,
                     ),
                   ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: results.isEmpty
-                  ? Center(
-                      child: Text(
-                        firstRun ||
-                                sourceController.text.trim().isEmpty ||
-                                destController.text.trim().isEmpty
-                            ? "Fill details above and tap Search to see routes."
-                            : "No bus routes",
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: results.length,
-                      itemBuilder: (context, index) {
-                        final route = results[index];
-
-                        return Container(
-                          margin: .symmetric(horizontal: 1.w, vertical: 5),
-                          child: OpenContainer(
-                            clipBehavior: Clip.hardEdge,
-                            transitionType: ContainerTransitionType.fadeThrough,
-                            transitionDuration: const Duration(
-                              milliseconds: 500,
-                            ),
-                            closedColor: Theme.of(context).cardColor,
-                            // closedElevation: 20,
-                            closedShape: RoundedRectangleBorder(
-                              borderRadius: BorderRadiusGeometry.circular(16.0),
-                            ),
-
-                            closedBuilder: (context, action) => RouteCard(
-                              route: route,
-                              source: sourceController.text,
-                              destination: destController.text,
-                              action: action,
-                            ),
-
-                            openBuilder: (context, action) => RouteDetailsPage(
-                              route: route,
-                              source: sourceController.text,
-                              destination: destController.text,
-                            ),
-                          ),
-                        );
-                      },
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: 100.w,
+                  height: 6.h,
+                  child: ElevatedButton(
+                    onPressed: handleSearch,
+                    child: Row(
+                      mainAxisAlignment: .center,
+                      crossAxisAlignment: .center,
+                      children: [
+                        Icon(
+                          Icons.search,
+                          size: 20.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        SizedBox(width: 2.w),
+                        Text(
+                          'SEARCH',
+                          style: TextStyle(fontSize: 18.sp, fontWeight: .w700),
+                        ),
+                      ],
                     ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: results.isNotEmpty
-          ? FloatingActionButton(
-              onPressed: () {
-                sourceController.clear();
-                viaController.clear();
-                destController.clear();
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: data.results.isEmpty
+                      ? Center(
+                          child: Text(
+                            firstRun ||
+                                    sourceController.text.trim().isEmpty ||
+                                    destController.text.trim().isEmpty
+                                ? "Fill details above and tap Search to see routes."
+                                : "No bus routes",
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: data.results.length,
+                          itemBuilder: (context, index) {
+                            final route = data.results[index];
 
-                setState(() {
-                  viaEnabled = false;
-                  results.clear();
-                  sourceFocusNode.unfocus();
-                  destFocusNode.unfocus();
-                  viaFocusNode.unfocus();
-                });
-              },
-              child: Icon(Icons.settings_backup_restore),
-            )
-          : null,
+                            return Container(
+                              margin: .symmetric(horizontal: 1.w, vertical: 5),
+                              child: OpenContainer(
+                                clipBehavior: Clip.hardEdge,
+                                transitionType:
+                                    ContainerTransitionType.fadeThrough,
+                                transitionDuration: const Duration(
+                                  milliseconds: 500,
+                                ),
+                                closedColor: Theme.of(context).cardColor,
+                                // closedElevation: 20,
+                                closedShape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadiusGeometry.circular(
+                                    16.0,
+                                  ),
+                                ),
+
+                                closedBuilder: (context, action) => RouteCard(
+                                  route: route,
+                                  source: sourceController.text,
+                                  destination: destController.text,
+                                  action: action,
+                                ),
+
+                                openBuilder: (context, action) =>
+                                    RouteDetailsPage(
+                                      route: route,
+                                      source: sourceController.text,
+                                      destination: destController.text,
+                                    ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+          bottomNavigationBar: _bannerAd != null
+              ? SizedBox(
+                  width: _bannerAd!.size.width.toDouble(),
+                  height: _bannerAd!.size.height.toDouble(),
+                  child: AdWidget(ad: _bannerAd!),
+                )
+              : null,
+          floatingActionButton: data.results.isNotEmpty
+              ? FloatingActionButton(
+                  onPressed: () {
+                    sourceController.clear();
+                    viaController.clear();
+                    destController.clear();
+
+                    dn.setResults([]);
+
+                    sourceFocusNode.unfocus();
+                    destFocusNode.unfocus();
+                    viaFocusNode.unfocus();
+                  },
+                  child: Icon(Icons.settings_backup_restore),
+                )
+              : null,
+        );
+      },
+      error: (error, stackTrace) {
+        return TextButton(onPressed: () {}, child: const Text('Retry'));
+      },
+      loading: () {
+        return Center(child: CircularProgressIndicator());
+      },
     );
   }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kolbus_app/models/route_model.dart';
-import 'package:kolbus_app/screens/backend.dart';
 
-class RouteDetailsPage extends StatelessWidget {
+class RouteDetailsPage extends ConsumerWidget {
   const RouteDetailsPage({
     super.key,
     required this.route,
@@ -15,11 +15,11 @@ class RouteDetailsPage extends StatelessWidget {
   final String destination;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final lowerStops = route.stops.map((e) => e.toLowerCase()).toList();
 
-    final sIndex = lowerStops.indexOf(normalizeStop(source).toLowerCase());
-    final dIndex = lowerStops.indexOf(normalizeStop(destination).toLowerCase());
+    final sIndex = lowerStops.indexOf(source.toLowerCase());
+    final dIndex = lowerStops.indexOf(destination.toLowerCase());
 
     return Scaffold(
       appBar: AppBar(title: Text("Route ${route.routeId}")),
